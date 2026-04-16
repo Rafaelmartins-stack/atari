@@ -15,10 +15,11 @@ const HEIGHT = canvas.height;
 const PLAYER_SIZE = 20;
 const ENEMY_SIZE = 20;
 const BULLET_SIZE = 4;
-const PLAYER_SPEED = 5;
+const PLAYER_SPEED = 7;
 const ENEMY_SPEED_MIN = 1;
 const ENEMY_SPEED_MAX = 3;
-const BULLET_SPEED = 7;
+const BULLET_SPEED = 8;
+const FIRE_RATE = 10; // Frames between shots
 const PARTICLE_COUNT = 8;
 
 // Game State
@@ -30,6 +31,7 @@ let bullets = [];
 let enemies = [];
 let particles = [];
 let keys = {};
+let fireCooldown = 0;
 let frameId;
 
 // Handle Controls
@@ -38,12 +40,29 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         if (gameState === 'MENU') startGame();
         else if (gameState === 'GAME_OVER') startGame();
-        else shoot();
     }
 });
 
 window.addEventListener('keyup', (e) => {
     keys[e.code] = false;
+});
+
+// Mouse Movement & Click
+canvas.addEventListener('mousemove', (e) => {
+    if (gameState !== 'PLAYING') return;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    player.x = mouseX - PLAYER_SIZE / 2;
+});
+
+canvas.addEventListener('mousedown', (e) => {
+    keys['Mouse0'] = true;
+    if (gameState === 'MENU') startGame();
+    if (gameState === 'GAME_OVER') startGame();
+});
+
+canvas.addEventListener('mouseup', (e) => {
+    keys['Mouse0'] = false;
 });
 
 function startGame() {
@@ -53,9 +72,10 @@ function startGame() {
     bullets = [];
     enemies = [];
     particles = [];
+    fireCooldown = 0;
     menuOverlay.classList.add('hidden');
     gameOverOverlay.classList.add('hidden');
-    
+
     cancelAnimationFrame(frameId);
     gameLoop();
 }
@@ -121,6 +141,15 @@ function update() {
         player.x += PLAYER_SPEED;
     }
 
+    // Auto-fire logic
+    if (keys['Space'] || keys['Mouse0']) {
+        if (fireCooldown <= 0) {
+            shoot();
+            fireCooldown = FIRE_RATE;
+        }
+    }
+    if (fireCooldown > 0) fireCooldown--;
+
     // Border Collision
     player.x = Math.max(0, Math.min(WIDTH - PLAYER_SIZE, player.x));
 
@@ -135,8 +164,8 @@ function update() {
         enemy.y += enemy.speed;
 
         // Collision: Enemy vs Player
-        if (checkCollision(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE, 
-                           enemy.x, enemy.y, enemy.width, enemy.height)) {
+        if (checkCollision(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE,
+            enemy.x, enemy.y, enemy.width, enemy.height)) {
             gameOver();
         }
 
@@ -148,7 +177,7 @@ function update() {
         // Collision: Enemy vs Bullet
         bullets.forEach((bullet, bIndex) => {
             if (checkCollision(bullet.x, bullet.y, bullet.width, bullet.height,
-                               enemy.x, enemy.y, enemy.width, enemy.height)) {
+                enemy.x, enemy.y, enemy.width, enemy.height)) {
                 createParticles(enemy.x, enemy.y, enemy.color);
                 enemies.splice(index, 1);
                 bullets.splice(bIndex, 1);
@@ -170,9 +199,9 @@ function update() {
 
 function checkCollision(x1, y1, w1, h1, x2, y2, w2, h2) {
     return x1 < x2 + w2 &&
-           x1 + w1 > x2 &&
-           y1 < y2 + h2 &&
-           y1 + h1 > y2;
+        x1 + w1 > x2 &&
+        y1 < y2 + h2 &&
+        y1 + h1 > y2;
 }
 
 function draw() {
@@ -192,8 +221,8 @@ function draw() {
         // Draw Player (Retro Ship Shape)
         ctx.fillStyle = '#0ff';
         ctx.fillRect(player.x, player.y + 10, PLAYER_SIZE, 10); // Base
-        ctx.fillRect(player.x + PLAYER_SIZE/2 - 5, player.y, 10, 10); // Cockpit
-        
+        ctx.fillRect(player.x + PLAYER_SIZE / 2 - 5, player.y, 10, 10); // Cockpit
+
         // Draw Bullets
         bullets.forEach(bullet => {
             ctx.fillStyle = bullet.color;
