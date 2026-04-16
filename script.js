@@ -343,24 +343,27 @@ function draw() {
     ctx.fillText(`HI: ${highScore}`, WIDTH - 20, 30);
 
     if (gameState === 'PLAYING' || gameState === 'GAME_OVER') {
-        // Draw Player (Sleek Atari Fighter)
+        // Draw Player (River Raid Style Fighter)
         ctx.fillStyle = '#0ff';
-        const s = PLAYER_SIZE / 7; // Use 7x7 grid
+        const grid = 9; // Use 9x9 grid
+        const s = PLAYER_SIZE / grid; 
         const px = player.x;
         const py = player.y;
 
         const shipShape = [
-            [0,0,0,1,0,0,0],
-            [0,0,1,1,1,0,0],
-            [0,0,1,1,1,0,0],
-            [0,1,1,1,1,1,0],
-            [1,1,1,1,1,1,1],
-            [1,1,0,0,0,1,1],
-            [1,0,0,0,0,0,1]
+            [0,0,0,0,1,0,0,0,0],
+            [0,0,0,0,1,0,0,0,0],
+            [0,0,1,1,1,1,1,0,0],
+            [0,1,1,1,1,1,1,1,0],
+            [1,1,1,1,1,1,1,1,1],
+            [0,0,0,0,1,0,0,0,0],
+            [0,0,0,1,1,1,0,0,0],
+            [0,0,1,1,0,1,1,0,0],
+            [0,1,1,0,0,0,1,1,0]
         ];
 
-        for(let r = 0; r < 7; r++) {
-            for(let c = 0; c < 7; c++) {
+        for(let r = 0; r < grid; r++) {
+            for(let c = 0; c < grid; c++) {
                 if(shipShape[r][c]) {
                     ctx.fillRect(px + c * s, py + r * s, s + 0.5, s + 0.5);
                 }
