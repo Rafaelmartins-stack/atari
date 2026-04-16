@@ -22,6 +22,13 @@ const BULLET_SPEED = 14;
 const FIRE_RATE = 10; // Frames between shots
 const PARTICLE_COUNT = 8;
 
+// Audio System
+let audioCtx;
+let nextNoteTime = 0;
+let beatCount = 0;
+const tempo = 120;
+const secondsPerBeat = 60 / tempo;
+
 // Game State
 let gameState = 'MENU'; // MENU, PLAYING, GAME_OVER
 let score = 0;
@@ -68,9 +75,11 @@ canvas.addEventListener('mouseup', (e) => {
 });
 
 function startGame() {
+    initAudio();
     gameState = 'PLAYING';
     score = 0;
     player.x = WIDTH / 2 - PLAYER_SIZE / 2;
+    player.y = HEIGHT - 40;
     bullets = [];
     enemies = [];
     particles = [];
@@ -80,6 +89,39 @@ function startGame() {
 
     cancelAnimationFrame(frameId);
     gameLoop();
+}
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+function playRetroMusic() {
+    if (!audioCtx || gameState !== 'PLAYING') return;
+    
+    const currentTime = audioCtx.currentTime;
+    if (currentTime > nextNoteTime) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        // Classic arcade rhythmic bass (alternating between two low notes)
+        const notes = [110, 82, 110, 73]; // A2, E2, A2, D2
+        osc.frequency.setValueAtTime(notes[beatCount % notes.length], currentTime);
+        osc.type = 'square'; // Chunky retro sound
+        
+        gain.gain.setValueAtTime(0.1, currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, currentTime + 0.2);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start(currentTime);
+        osc.stop(currentTime + 0.2);
+        
+        nextNoteTime = currentTime + secondsPerBeat / 2;
+        beatCount++;
+    }
 }
 
 function gameOver() {
@@ -92,8 +134,47 @@ function gameOver() {
     gameOverOverlay.classList.remove('hidden');
 }
 
+function playShootSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.1);
+    
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function playExplosionSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+    
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+}
+
 function shoot() {
     if (gameState !== 'PLAYING') return;
+    playShootSound();
     bullets.push({
         x: player.x + PLAYER_SIZE / 2 - BULLET_SIZE / 2,
         y: player.y,
@@ -187,6 +268,7 @@ function update() {
         bullets.forEach((bullet, bIndex) => {
             if (checkCollision(bullet.x, bullet.y, bullet.width, bullet.height,
                 enemy.x, enemy.y, enemy.width, enemy.height)) {
+                playExplosionSound();
                 createParticles(enemy.x, enemy.y, enemy.color);
                 enemies.splice(index, 1);
                 bullets.splice(bIndex, 1);
@@ -227,19 +309,29 @@ function draw() {
     ctx.fillText(`HI: ${highScore}`, WIDTH - 20, 30);
 
     if (gameState === 'PLAYING' || gameState === 'GAME_OVER') {
-        // Draw Player (Improved Atari Ship)
+        // Draw Player (Sleek Atari Fighter)
         ctx.fillStyle = '#0ff';
-        const ps = PLAYER_SIZE / 5;
-        // Nose
-        ctx.fillRect(player.x + ps * 2, player.y, ps, ps);
-        // Body
-        ctx.fillRect(player.x + ps, player.y + ps, ps * 3, ps * 2);
-        // Wings
-        ctx.fillRect(player.x, player.y + ps * 2, ps, ps * 2);
-        ctx.fillRect(player.x + ps * 4, player.y + ps * 2, ps, ps * 2);
-        // Engines
-        ctx.fillRect(player.x + ps, player.y + ps * 4, ps, ps);
-        ctx.fillRect(player.x + ps * 3, player.y + ps * 4, ps, ps);
+        const s = PLAYER_SIZE / 7; // Use 7x7 grid
+        const px = player.x;
+        const py = player.y;
+
+        const shipShape = [
+            [0,0,0,1,0,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,1,1,1,1,1,0],
+            [1,1,1,1,1,1,1],
+            [1,1,0,0,0,1,1],
+            [1,0,0,0,0,0,1]
+        ];
+
+        for(let r = 0; r < 7; r++) {
+            for(let c = 0; c < 7; c++) {
+                if(shipShape[r][c]) {
+                    ctx.fillRect(px + c * s, py + r * s, s + 0.5, s + 0.5);
+                }
+            }
+        }
 
         // Draw Bullets
         bullets.forEach(bullet => {
@@ -283,6 +375,7 @@ function draw() {
 function gameLoop() {
     update();
     draw();
+    playRetroMusic();
     frameId = requestAnimationFrame(gameLoop);
 }
 
