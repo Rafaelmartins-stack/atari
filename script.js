@@ -15,10 +15,10 @@ const HEIGHT = canvas.height;
 const PLAYER_SIZE = 20;
 const ENEMY_SIZE = 20;
 const BULLET_SIZE = 4;
-const PLAYER_SPEED = 7;
-const ENEMY_SPEED_MIN = 1;
-const ENEMY_SPEED_MAX = 3;
-const BULLET_SPEED = 8;
+const PLAYER_SPEED = 10;
+const ENEMY_SPEED_MIN = 0.7;
+const ENEMY_SPEED_MAX = 2.2;
+const BULLET_SPEED = 14;
 const FIRE_RATE = 10; // Frames between shots
 const PARTICLE_COUNT = 8;
 
@@ -52,7 +52,9 @@ canvas.addEventListener('mousemove', (e) => {
     if (gameState !== 'PLAYING') return;
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
     player.x = mouseX - PLAYER_SIZE / 2;
+    player.y = mouseY - PLAYER_SIZE / 2;
 });
 
 canvas.addEventListener('mousedown', (e) => {
@@ -133,12 +135,18 @@ function createParticles(x, y, color) {
 function update() {
     if (gameState !== 'PLAYING') return;
 
-    // Move Player
+    // Move Player (Keyboard)
     if (keys['ArrowLeft'] || keys['KeyA']) {
         player.x -= PLAYER_SPEED;
     }
     if (keys['ArrowRight'] || keys['KeyD']) {
         player.x += PLAYER_SPEED;
+    }
+    if (keys['ArrowUp'] || keys['KeyW']) {
+        player.y -= PLAYER_SPEED;
+    }
+    if (keys['ArrowDown'] || keys['KeyS']) {
+        player.y += PLAYER_SPEED;
     }
 
     // Auto-fire logic
@@ -152,6 +160,7 @@ function update() {
 
     // Border Collision
     player.x = Math.max(0, Math.min(WIDTH - PLAYER_SIZE, player.x));
+    player.y = Math.max(0, Math.min(HEIGHT - PLAYER_SIZE, player.y));
 
     // Update Bullets
     bullets.forEach((bullet, index) => {
@@ -218,10 +227,19 @@ function draw() {
     ctx.fillText(`HI: ${highScore}`, WIDTH - 20, 30);
 
     if (gameState === 'PLAYING' || gameState === 'GAME_OVER') {
-        // Draw Player (Retro Ship Shape)
+        // Draw Player (Improved Atari Ship)
         ctx.fillStyle = '#0ff';
-        ctx.fillRect(player.x, player.y + 10, PLAYER_SIZE, 10); // Base
-        ctx.fillRect(player.x + PLAYER_SIZE / 2 - 5, player.y, 10, 10); // Cockpit
+        const ps = PLAYER_SIZE / 5;
+        // Nose
+        ctx.fillRect(player.x + ps * 2, player.y, ps, ps);
+        // Body
+        ctx.fillRect(player.x + ps, player.y + ps, ps * 3, ps * 2);
+        // Wings
+        ctx.fillRect(player.x, player.y + ps * 2, ps, ps * 2);
+        ctx.fillRect(player.x + ps * 4, player.y + ps * 2, ps, ps * 2);
+        // Engines
+        ctx.fillRect(player.x + ps, player.y + ps * 4, ps, ps);
+        ctx.fillRect(player.x + ps * 3, player.y + ps * 4, ps, ps);
 
         // Draw Bullets
         bullets.forEach(bullet => {
@@ -229,14 +247,27 @@ function draw() {
             ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
         });
 
-        // Draw Enemies (Pixel Monsters)
+        // Draw Enemies (Improved Atari Sprite)
         enemies.forEach(enemy => {
             ctx.fillStyle = enemy.color;
-            ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-            // Add some "eyes" for detail
+            const s = enemy.width / 5; // Use 5x5 grid for enemy design
+            
+            // Central Body
+            ctx.fillRect(enemy.x + s, enemy.y + s, s * 3, s * 3);
+            // Antennas/Horns
+            ctx.fillRect(enemy.x, enemy.y, s, s);
+            ctx.fillRect(enemy.x + s * 4, enemy.y, s, s);
+            // Arms/Wings
+            ctx.fillRect(enemy.x, enemy.y + s * 2, s, s * 2);
+            ctx.fillRect(enemy.x + s * 4, enemy.y + s * 2, s, s * 2);
+            // Bottom details
+            ctx.fillRect(enemy.x + s, enemy.y + s * 4, s, s);
+            ctx.fillRect(enemy.x + s * 3, enemy.y + s * 4, s, s);
+
+            // Eyes (Atari style)
             ctx.fillStyle = '#000';
-            ctx.fillRect(enemy.x + 4, enemy.y + 4, 4, 4);
-            ctx.fillRect(enemy.x + 12, enemy.y + 4, 4, 4);
+            ctx.fillRect(enemy.x + s, enemy.y + s * 2, s, s);
+            ctx.fillRect(enemy.x + s * 3, enemy.y + s * 2, s, s);
         });
 
         // Draw Particles
