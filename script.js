@@ -16,8 +16,9 @@ const PLAYER_SIZE = 20;
 const ENEMY_SIZE = 20;
 const BULLET_SIZE = 4;
 const PLAYER_SPEED = 10;
-const ENEMY_SPEED_MIN = 0.7;
-const ENEMY_SPEED_MAX = 2.2;
+const PLAYER_SPEED = 10;
+const ENEMY_SPEED_MIN = 0.5;
+const ENEMY_SPEED_MAX = 1.5;
 const BULLET_SPEED = 14;
 const FIRE_RATE = 10; // Frames between shots
 const PARTICLE_COUNT = 8;
@@ -198,7 +199,16 @@ function shoot() {
 function spawnEnemy() {
     if (Math.random() < 0.02) { // Probability of spawn per frame
         const x = Math.random() * (WIDTH - ENEMY_SIZE);
-        const speed = Math.random() * (ENEMY_SPEED_MAX - ENEMY_SPEED_MIN) + ENEMY_SPEED_MIN;
+        
+        // Base speed progression: increases every 500 points
+        const difficultyMultiplier = 1 + (score / 500);
+        let speed = (Math.random() * (ENEMY_SPEED_MAX - ENEMY_SPEED_MIN) + ENEMY_SPEED_MIN) * difficultyMultiplier;
+        
+        // 1/3 of enemies are 40% slower to keep the game fair
+        if (Math.random() < 0.33) {
+            speed *= 0.6;
+        }
+
         const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
         enemies.push({
             x,
