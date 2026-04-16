@@ -15,9 +15,9 @@ const HEIGHT = canvas.height;
 const PLAYER_SIZE = 20;
 const ENEMY_SIZE = 20;
 const BULLET_SIZE = 4;
-const PLAYER_SPEED = 10;
-const ENEMY_SPEED_MIN = 0.5;
-const ENEMY_SPEED_MAX = 1.5;
+const PLAYER_SPEED = 8;
+const ENEMY_SPEED_MIN = 0.8;
+const ENEMY_SPEED_MAX = 2.0;
 const BULLET_SPEED = 14;
 const FIRE_RATE = 10; // Frames between shots
 const PARTICLE_COUNT = 8;
@@ -85,7 +85,7 @@ function startGame() {
     score = 0;
     lives = 3;
     player.x = WIDTH / 2 - PLAYER_SIZE / 2;
-    player.y = HEIGHT - 40;
+    player.y = HEIGHT - PLAYER_SIZE - 10;
     bullets = [];
     enemies = [];
     particles = [];
@@ -204,7 +204,7 @@ function shoot() {
 }
 
 function spawnEnemy() {
-    if (Math.random() < 0.02) { // Probability of spawn per frame
+    if (Math.random() < 0.035) { // Increased spawn probability for more challenge
         const x = Math.random() * (WIDTH - ENEMY_SIZE);
         
         // Base speed progression: increases every 500 points
