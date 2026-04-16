@@ -66,9 +66,7 @@ canvas.addEventListener('mousemove', (e) => {
     if (gameState !== 'PLAYING') return;
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
     player.x = mouseX - PLAYER_SIZE / 2;
-    player.y = mouseY - PLAYER_SIZE / 2;
 });
 
 window.addEventListener('mousedown', (e) => {
@@ -252,12 +250,6 @@ function update() {
     }
     if (keys['ArrowRight'] || keys['KeyD']) {
         player.x += PLAYER_SPEED;
-    }
-    if (keys['ArrowUp'] || keys['KeyW']) {
-        player.y -= PLAYER_SPEED;
-    }
-    if (keys['ArrowDown'] || keys['KeyS']) {
-        player.y += PLAYER_SPEED;
     }
 
     // Auto-fire logic
