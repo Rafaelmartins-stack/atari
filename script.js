@@ -16,7 +16,6 @@ const PLAYER_SIZE = 20;
 const ENEMY_SIZE = 20;
 const BULLET_SIZE = 4;
 const PLAYER_SPEED = 10;
-const PLAYER_SPEED = 10;
 const ENEMY_SPEED_MIN = 0.5;
 const ENEMY_SPEED_MAX = 1.5;
 const BULLET_SPEED = 14;
