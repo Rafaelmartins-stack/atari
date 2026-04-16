@@ -33,6 +33,7 @@ const secondsPerBeat = 60 / tempo;
 let gameState = 'MENU'; // MENU, PLAYING, GAME_OVER
 let score = 0;
 let highScore = localStorage.getItem('atariHighScore') || 0;
+let lives = 3;
 let player = { x: WIDTH / 2 - PLAYER_SIZE / 2, y: HEIGHT - 40 };
 let bullets = [];
 let enemies = [];
@@ -78,6 +79,7 @@ function startGame() {
     initAudio();
     gameState = 'PLAYING';
     score = 0;
+    lives = 3;
     player.x = WIDTH / 2 - PLAYER_SIZE / 2;
     player.y = HEIGHT - 40;
     bullets = [];
@@ -95,18 +97,26 @@ function initAudio() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
 }
 
 function playRetroMusic() {
     if (!audioCtx || gameState !== 'PLAYING') return;
     
+    // Safety check for suspended state
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+
     const currentTime = audioCtx.currentTime;
     if (currentTime > nextNoteTime) {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         
-        // Classic arcade rhythmic bass (alternating between two low notes)
-        const notes = [110, 82, 110, 73]; // A2, E2, A2, D2
+        // Classic arcade rhythmic bass (slightly higher for better audibility)
+        const notes = [220, 164, 220, 146]; // A3, E3, A3, D3
         osc.frequency.setValueAtTime(notes[beatCount % notes.length], currentTime);
         osc.type = 'square'; // Chunky retro sound
         
@@ -126,6 +136,7 @@ function playRetroMusic() {
 
 function gameOver() {
     gameState = 'GAME_OVER';
+    lives = 0; // Ensure lives are 0 on game over
     if (score > highScore) {
         highScore = score;
         localStorage.setItem('atariHighScore', highScore);
@@ -256,12 +267,22 @@ function update() {
         // Collision: Enemy vs Player
         if (checkCollision(player.x, player.y, PLAYER_SIZE, PLAYER_SIZE,
             enemy.x, enemy.y, enemy.width, enemy.height)) {
-            gameOver();
+            playExplosionSound();
+            lives--;
+            enemies.splice(index, 1);
+            if (lives <= 0) {
+                gameOver();
+            }
         }
 
         // Collision: Enemy reaches bottom
         if (enemy.y > HEIGHT) {
-            gameOver();
+            playExplosionSound();
+            lives--;
+            enemies.splice(index, 1);
+            if (lives <= 0) {
+                gameOver();
+            }
         }
 
         // Collision: Enemy vs Bullet
@@ -305,6 +326,8 @@ function draw() {
     ctx.font = '16px "Courier New"';
     ctx.textAlign = 'left';
     ctx.fillText(`SCORE: ${score}`, 20, 30);
+    ctx.textAlign = 'center';
+    ctx.fillText(`LIVES: ${lives}`, WIDTH / 2, 30);
     ctx.textAlign = 'right';
     ctx.fillText(`HI: ${highScore}`, WIDTH - 20, 30);
 
