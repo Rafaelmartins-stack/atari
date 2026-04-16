@@ -45,6 +45,12 @@ let frameId;
 // Handle Controls
 window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
+    
+    // Prevent default behavior for game keys (scrolling, etc.)
+    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        e.preventDefault();
+    }
+
     if (e.code === 'Space') {
         if (gameState === 'MENU') startGame();
         else if (gameState === 'GAME_OVER') startGame();
@@ -65,13 +71,13 @@ canvas.addEventListener('mousemove', (e) => {
     player.y = mouseY - PLAYER_SIZE / 2;
 });
 
-canvas.addEventListener('mousedown', (e) => {
+window.addEventListener('mousedown', (e) => {
     keys['Mouse0'] = true;
     if (gameState === 'MENU') startGame();
     if (gameState === 'GAME_OVER') startGame();
 });
 
-canvas.addEventListener('mouseup', (e) => {
+window.addEventListener('mouseup', (e) => {
     keys['Mouse0'] = false;
 });
 
@@ -94,11 +100,15 @@ function startGame() {
 }
 
 function initAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    } catch (e) {
+        console.error("Audio failed to initialize:", e);
     }
 }
 
